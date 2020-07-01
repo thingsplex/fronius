@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]
+then
+  groupadd -r thingsplex || true
+  groupadd -r fronius || true
+
+  useradd -r -N -M -d / -s /bin/false -g thingsplex fronius || true
+
+  chown -R fronius:thingsplex /var/log/thingsplex/fronius/ || true
+  chown -R fronius:fronius /opt/thingsplex/fronius/ || true
+fi
+
+deb-systemd-helper unmask fronius.service >/dev/null || true
+
+if deb-systemd-helper --quiet was-enabled fronius.service; then
+  systemctl enable fronius.service || true
+else
+  deb-systemd-helper update-state fronius.service >/dev/null || true
+fi
+
+if [ -d /run/systemd/system ]; then
+  systemctl --system daemon-reload >/dev/null || true
+
+  if [ -n "$2" ]; then
+    deb-systemd-invoke try-restart fronius.service >/dev/null || true
+  else
+    deb-systemd-invoke start fronius.service >/dev/null || true
+  fi
+fi
