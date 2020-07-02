@@ -31,6 +31,7 @@ type Configs struct {
 	Param1             bool   `json:"param_1"`
 	Param2             string `json:"param_2"`
 	PollTimeSec        int    `json:"poll_time_sec"`
+	StateDir           string `json:"state_dir"`
 	Host               string `json:"host"`
 }
 

@@ -6,7 +6,7 @@ import (
 	"github.com/thingsplex/fronius/fronius"
 )
 
-func (fc *FimpFroniusHandler) SendMeasurements(addr string, meas fronius.System) {
+func (fc *FromFimpRouter) SendMeasurements(addr string, meas fronius.System) {
 	state := fronius.State{}
 	val := make(map[string]fronius.State)
 	val["last_e_export"] = state.EnergyDay(meas)

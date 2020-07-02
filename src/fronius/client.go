@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -33,8 +31,8 @@ type System struct {
 	Body struct {
 		Data struct {
 			EnergyDay struct {
-				Unit  string `json:"Unit"`
-				Value int32  `json:"Value"`
+				Unit  string  `json:"Unit"`
+				Value float64 `json:"Value"`
 			} `json:"DAY_ENERGY"`
 			DeviceStatus struct {
 				ErrorCode              int32
@@ -45,49 +43,48 @@ type System struct {
 				StatusCode             int32
 			} `json:"DeviceStatus"`
 			Freq struct {
-				Unit  string `json:"Unit"`
-				Value int32  `json:"Value"`
+				Unit  string  `json:"Unit"`
+				Value float64 `json:"Value"`
 			} `json:"FAC"`
 			CurrentAC struct {
-				Unit  string `json:"Unit"`
-				Value int32  `json:"Value"`
+				Unit  string  `json:"Unit"`
+				Value float64 `json:"Value"`
 			} `json:"IAC"`
 			CurrentDC struct {
-				Unit  string `json:"Unit"`
-				Value int32  `json:"Value"`
+				Unit  string  `json:"Unit"`
+				Value float64 `json:"Value"`
 			} `json:"IDC"`
 			Power struct {
-				Unit  string `json:"Unit"`
-				Value int32  `json:"Value"`
+				Unit  string  `json:"Unit"`
+				Value float64 `json:"Value"`
 			} `json:"PAC"`
 			EnergyTotal struct {
-				Unit  string `json:"Unit"`
-				Value int32  `json:"Value"`
+				Unit  string  `json:"Unit"`
+				Value float64 `json:"Value"`
 			} `json:"TOTAL_ENERGY"`
 			VoltageAC struct {
-				Unit  string `json:"Unit"`
-				Value int32  `json:"Value"`
+				Unit  string  `json:"Unit"`
+				Value float64 `json:"Value"`
 			} `json:"UAC"`
 			VoltageDC struct {
-				Unit  string `json:"Unit"`
-				Value int32  `json:"Value"`
+				Unit  string  `json:"Unit"`
+				Value float64 `json:"Value"`
 			} `json:"UDC"`
 			EnergyYear struct {
-				Unit  string `json:"Unit"`
-				Value int32  `json:"Value"`
+				Unit  string  `json:"Unit"`
+				Value float64 `json:"Value"`
 			} `json:"YEAR_ENERGY"`
 		} `json:"Data"`
 	} `json:"Body"`
 }
 
 type State struct {
-	Value int32
+	Value float64
 	Unit  string
 }
 
 func GetRealTimeDataURL(host string) string {
 	url := fmt.Sprintf("%s%s%s%s%s%s%s", host, "/", api, "/", getInvRtData, "?", scope)
-	log.Debug(url)
 	return url
 }
 
@@ -124,4 +121,11 @@ func (st State) EnergyTotal(sys System) State {
 	st.Value = sys.Body.Data.EnergyTotal.Value
 	st.Unit = sys.Body.Data.EnergyTotal.Unit
 	return st
+}
+
+func (st State) GetSystems() (bool, error) {
+	// value := url.Values{
+	// 	"fields": []string{""}
+	// }
+	return true, nil
 }

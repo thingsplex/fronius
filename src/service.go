@@ -3,11 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/thingsplex/fronius/fronius"
 
 	"github.com/futurehomeno/fimpgo"
 	"github.com/futurehomeno/fimpgo/edgeapp"
 	log "github.com/sirupsen/logrus"
+	"github.com/thingsplex/fronius/handler"
 	"github.com/thingsplex/fronius/model"
 	"github.com/thingsplex/fronius/utils"
 )
@@ -37,6 +41,8 @@ func main() {
 		fmt.Print(err)
 		panic("Not able to load state")
 	}
+	system := fronius.System{}
+	// state := fronius.State{}
 
 	utils.SetupLog(configs.LogFile, configs.LogLevel, configs.LogFormat)
 	log.Info("--------------Starting fronius----------------")
@@ -72,16 +78,45 @@ func main() {
 		appLifecycle.SetAuthState(edgeapp.AuthStateNotAuthenticated)
 	}
 
-	fimpHandler := handler.NewFimpFroniusHandler(mqtt, configs.StateDir, appLifecycle)
-	fimpHandler.Start(configs.PollTimeSec)
-	log.Info("-------------------Starting handler-----------------")
+	fimpRouter := handler.NewFromFimpRouter(mqtt, appLifecycle, configs, states)
+	fimpRouter.Start()
 
-	mqtt.Subscribe("pt:j1/mt:cmd/rt:ad/rn:fronius/ad:1")
-	mqtt.Subscribe("pt:j1/mt:evt/rt:dev/rn:fronius/ad:1/#")
-	log.Info("Subscribing to topic: pt:j1/mt:cmd/rt:ad/rn:fronius/ad:1")
-	log.Info("Subscribing to topic: pt:j1/mt:evt/rt:dev/rn:fronius/ad:1/#")
-
-	select {}
+	PollTime := configs.PollTimeSec
+	for {
+		appLifecycle.WaitForState("main", edgeapp.AppStateRunning)
+		log.Info("--------------Starting ticker---------------")
+		ticker := time.NewTicker(time.Duration(PollTime) * time.Second)
+		for ; true; <-ticker.C {
+			log.Debug(states.Connected)
+			if states.Connected {
+				req, err := http.NewRequest("GET", fronius.GetRealTimeDataURL(configs.Host), nil)
+				if err != nil {
+					log.Error(fmt.Errorf("Can't get measurements - ", err))
+				}
+				log.Debug("")
+				log.Debug(req)
+				log.Debug("")
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					log.Error(err)
+				} else {
+					measurements, err := system.NewResponse(resp)
+					if err != nil {
+						log.Error(err)
+					}
+					log.Debug(resp)
+					log.Debug("")
+					fimpRouter.SendMeasurements(system.Head.RequestArguments.DeviceId, measurements)
+				}
+			} else {
+				log.Debug("-------NOT CONNECTED------")
+				// Do nothing
+			}
+			states.SaveToFile()
+		}
+		appLifecycle.WaitForState(edgeapp.AppStateNotConfigured, "main")
+	}
 
 	mqtt.Stop()
+	time.Sleep(5 * time.Second)
 }

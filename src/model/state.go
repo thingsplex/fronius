@@ -11,18 +11,20 @@ import (
 	"github.com/futurehomeno/fimpgo/edgeapp"
 	"github.com/futurehomeno/fimpgo/utils"
 	log "github.com/sirupsen/logrus"
+	"github.com/thingsplex/fronius/fronius"
 )
 
 type State struct {
 	path          string
-	WorkDir       string `json:"-"`
-	ConfiguredAt  string `json:"configured_at"`
-	ConfiguredBy  string `json:"configured_by"`
-	EnergyCurrent string `json:"PAC"`
-	EnergyDay     string `json:"DAY_ENERGY"`
-	EnergyYear    string `json:"YEAR_ENERGY"`
-	EnergyTotal   string `json:"TOTAL_ENERGY"`
-	Connected     bool   `json:"connected"`
+	WorkDir       string           `json:"-"`
+	ConfiguredAt  string           `json:"configured_at"`
+	ConfiguredBy  string           `json:"configured_by"`
+	EnergyCurrent string           `json:"PAC"`
+	EnergyDay     string           `json:"DAY_ENERGY"`
+	EnergyYear    string           `json:"YEAR_ENERGY"`
+	EnergyTotal   string           `json:"TOTAL_ENERGY"`
+	Connected     bool             `json:"connected"`
+	Systems       []fronius.System `json:"systems"`
 }
 
 func NewStates(workDir string) *State {
