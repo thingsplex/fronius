@@ -5,7 +5,8 @@ arch="armhf"
 remote_host = "fh@cube.local"
 
 clean:
-	-rm fronius
+	-rm ./src/fronius
+	find . -name '.DS_Store' -type f -delete
 
 build-go:
 	cd ./src;go build -o fronius service.go;cd ../
@@ -35,8 +36,9 @@ clean-deb:
 package-deb-doc:clean-deb
 	@echo "Packaging application using Thingsplex debian package layout"
 	chmod a+x package/debian/DEBIAN/*
+	mkdir -p package/debian/var/log/thingsplex/sensibo package debian/usr/bin
+	mkdir -p package/build
 	cp ./src/fronius package/debian/opt/thingsplex/fronius
-	cp VERSION package/debian/opt/thingsplex/fronius
 	docker run --rm -v ${working_dir}:/build -w /build --name debuild debian dpkg-deb --build package/debian
 	@echo "Done"
 
