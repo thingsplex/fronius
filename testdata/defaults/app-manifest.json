@@ -5,7 +5,7 @@
       "label": {"en": "Host"},
       "val_t": "string",
       "ui": {
-        "type": "input_string",
+        "type": "input_string"
       },
       "val": {
         "default": ""
@@ -20,15 +20,15 @@
   "ui_blocks": [{
       "id": "host",
       "header": {"en": "Host IP"},
-      "text": {"en": "The operation can't be undone"},
-      "configs": [],
-      "buttons": ["factory_reset"],
+      "text": {"en": "Set your Fronius Inverter's IP. PS: FORMAT NEEDS TO BE XX.XX.XX.XX. Example: 10.0.0.83"},
+      "configs": ["host"],
+      "buttons": [],
       "footer": {"en": ""},
       "hidden":false
     }
   ],
   "auth": {
-    "type": "password",
+    "type": "",
     "code_grant_login_page_url" : "",
     "redirect_url": "",
     "client_id": "",

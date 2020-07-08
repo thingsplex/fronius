@@ -101,8 +101,7 @@ func (fc *FromFimpRouter) routeFimpMessage(newMsg *fimpgo.Message) {
 			log.Error("Can't parse configuration object")
 			return
 		}
-		fc.configs.Param1 = conf.Param1
-		fc.configs.Param2 = conf.Param2
+		fc.configs.Host = conf.Host
 		fc.configs.SaveToFile()
 		log.Debugf("App reconfigured . New parameters : %v", fc.configs)
 		// TODO: This is an example . Add your logic here or remove

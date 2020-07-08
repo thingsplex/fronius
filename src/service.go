@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/grandcat/zeroconf"
 	"github.com/thingsplex/fronius/fronius-api"
 
 	"github.com/futurehomeno/fimpgo"
@@ -82,6 +84,28 @@ func main() {
 	fimpRouter := handler.NewFromFimpRouter(mqtt, appLifecycle, configs, states)
 	fimpRouter.Start()
 
+	resolver, err := zeroconf.NewResolver(nil)
+	if err != nil {
+		log.Fatalln("Failed to initialize resolver:", err.Error())
+	}
+
+	entries := make(chan *zeroconf.ServiceEntry)
+	go func(results <-chan *zeroconf.ServiceEntry) {
+		for entry := range results {
+			log.Println(entry)
+		}
+		log.Println("No more entries.")
+	}(entries)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*150)
+	defer cancel()
+	err = resolver.Browse(ctx, "", ".local", entries)
+	if err != nil {
+		log.Fatalln("Failed to browse:", err.Error())
+	}
+
+	<-ctx.Done()
+
 	PollTime := configs.PollTimeSec
 	for {
 		appLifecycle.WaitForState("main", edgeapp.AppStateRunning)
@@ -91,7 +115,7 @@ func main() {
 			log.Debug(states.Connected)
 			states.Connected = true
 			if states.Connected {
-				req, err := http.NewRequest("GET", fronius.GetRealTimeDataURL("http://FRONIUS-IP:80"), nil)
+				req, err := http.NewRequest("GET", fronius.GetRealTimeDataURL(fmt.Sprintf("%s%s%s", "http://", configs.Host, ":80")), nil)
 				if err != nil {
 					log.Error(fmt.Errorf("Can't get measurements - ", err))
 				}
