@@ -97,7 +97,7 @@ func main() {
 		log.Println("No more entries.")
 	}(entries)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*150)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	defer cancel()
 	err = resolver.Browse(ctx, "", ".local", entries)
 	if err != nil {
@@ -127,7 +127,7 @@ func main() {
 					if err != nil {
 						log.Error(err)
 					} else {
-						if states.IsConfigured() && appLifecycle.ConfigState() == edgeapp.ConfigStateNotConfigured {
+						if appLifecycle.ConfigState() == edgeapp.ConfigStateNotConfigured {
 							inclReport := model.SendInclusionReport(1, states.Systems)
 
 							msg := fimpgo.NewMessage("evt.thing.inclusion_report", "fronius", fimpgo.VTypeObject, inclReport, nil, nil, nil)

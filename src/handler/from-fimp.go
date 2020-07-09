@@ -153,8 +153,13 @@ func (fc *FromFimpRouter) routeFimpMessage(newMsg *fimpgo.Message) {
 		}
 		deviceId, ok := val["address"]
 		if ok {
-			// TODO: This is an example . Add your logic here or remove
 			log.Info(deviceId)
+			exclReport := make(map[string]string)
+			exclReport["address"] = deviceId
+
+			msg := fimpgo.NewMessage("evt.thing.exclusion_report", "fronius", fimpgo.VTypeObject, exclReport, nil, nil, nil)
+			adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
+			fc.mqt.Publish(&adr, msg)
 		} else {
 			log.Error("Incorrect address")
 
