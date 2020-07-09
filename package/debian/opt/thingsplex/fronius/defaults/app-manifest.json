@@ -20,23 +20,14 @@
   "ui_blocks": [{
       "id": "host",
       "header": {"en": "Host IP"},
-      "text": {"en": "Set your Fronius Inverter's IP. PS: FORMAT NEEDS TO BE XX.XX.XX.XX. Example: 10.0.0.83"},
+      "text": {"en": "Set your Fronius Inverter's IP. \n PS: FORMAT NEEDS TO BE XX.XX.XX.XX. \n Example: 10.0.0.83"},
       "configs": ["host"],
       "buttons": [],
       "footer": {"en": ""},
       "hidden":false
     }
   ],
-  "auth": {
-    "type": "",
-    "code_grant_login_page_url" : "",
-    "redirect_url": "",
-    "client_id": "",
-    "secret": "",
-    "partner_id": "",
-    "auth_endpoint": ""
-  },
-  "init_flow":["auth","connect"],
+  "init_flow":["connect"],
   "services": [
     {
       "name": "hue",
@@ -50,47 +41,21 @@
           "ver": "1"
         },
         {
-          "intf_t": "in",
-          "msg_t": "cmd.system.sync",
-          "val_t": "null",
-          "ver": "1"
-        },
-        {
-          "intf_t": "in",
-          "msg_t": "cmd.system.reconnect",
-          "val_t": "null",
-          "ver": "1"
-        },
-        {
           "intf_t": "out",
           "msg_t": "evt.app.manifest_report",
           "val_t": "object",
           "ver": "1"
-        },{
-          "intf_t": "out",
-          "msg_t": "cmd.app.get_full_state",
-          "val_t": "string",
-          "ver": "1"
-        },{
+        },
+        {
           "intf_t": "out",
           "msg_t": "cmd.app.full_state_report",
           "val_t": "object",
           "ver": "1"
-        },{
+        },
+        {
           "intf_t": "in",
           "msg_t": "cmd.config.extended_set",
           "val_t": "str_map",
-          "ver": "1"
-        },{
-          "intf_t": "in",
-          "msg_t": "cmd.auth.set_tokens",
-          "val_t": "str_map",
-          "ver": "1"
-        },
-        {
-          "intf_t": "out",
-          "msg_t": "evt.auth.login_report",
-          "val_t": "string",
           "ver": "1"
         },
         {

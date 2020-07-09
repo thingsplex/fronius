@@ -36,8 +36,8 @@ func (fc *FromFimpRouter) Start() {
 
 	fc.mqt.Subscribe(fmt.Sprintf("pt:j1/+/rt:dev/rn:%s/ad:1/#", model.ServiceName))
 	fc.mqt.Subscribe(fmt.Sprintf("pt:j1/+/rt:ad/rn:%s/ad:1", model.ServiceName))
-	log.Debug("Subscribing to topic: pt:j1/+/rt:dev/rn:%s/ad:1/#")
-	log.Debug("Subscribing to topic: pt:j1/+/rt:ad/rn:%s/ad:1")
+	log.Debug(fmt.Sprintf("Subscribing to topic: pt:j1/+/rt:dev/rn:%s/ad:1/#", model.ServiceName))
+	log.Debug(fmt.Sprintf("Subscribing to topic: pt:j1/+/rt:ad/rn:%s/ad:1", model.ServiceName))
 
 	go func(msgChan fimpgo.MessageCh) {
 		for {
@@ -131,8 +131,12 @@ func (fc *FromFimpRouter) routeFimpMessage(newMsg *fimpgo.Message) {
 	case "cmd.network.get_all_nodes":
 		// TODO: This is an example . Add your logic here or remove
 	case "cmd.thing.get_inclusion_report":
-		//nodeId , _ := newMsg.Payload.GetStringValue()
-		// TODO: This is an example . Add your logic here or remove
+		inclReport := model.SendInclusionReport(1, fc.state.Systems)
+
+		msg := fimpgo.NewMessage("evt.thing.inclusion_report", "fronius", fimpgo.VTypeObject, inclReport, nil, nil, nil)
+		adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
+		fc.mqt.Publish(&adr, msg)
+
 	case "cmd.thing.inclusion":
 		inclReport := model.SendInclusionReport(1, fc.state.Systems)
 
