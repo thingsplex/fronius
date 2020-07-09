@@ -27,7 +27,7 @@ type ListReportRecord struct {
 }
 
 func NewFromFimpRouter(mqt *fimpgo.MqttTransport, appLifecycle *edgeapp.Lifecycle, configs *model.Configs, states *model.State) *FromFimpRouter {
-	fc := FromFimpRouter{inboundMsgCh: make(fimpgo.MessageCh, 5), mqt: mqt, configs: configs, state: states}
+	fc := FromFimpRouter{inboundMsgCh: make(fimpgo.MessageCh, 5), mqt: mqt, appLifecycle: appLifecycle, configs: configs, state: states}
 	fc.mqt.RegisterChannel("ch1", fc.inboundMsgCh)
 	return &fc
 }
