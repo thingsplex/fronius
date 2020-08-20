@@ -112,10 +112,9 @@ func main() {
 		log.Info("--------------Starting ticker---------------")
 		ticker := time.NewTicker(time.Duration(PollTime) * time.Second)
 		for ; true; <-ticker.C {
-			log.Debug(states.Connected)
-			states.Connected = true
-			if states.Connected {
+			if configs.Host != "host_ip" {
 				req, err := http.NewRequest("GET", fronius.GetRealTimeDataURL(fmt.Sprintf("%s%s%s", "http://", configs.Host, ":80")), nil)
+				log.Debug(req)
 				if err != nil {
 					log.Error(fmt.Errorf("Can't get measurements - ", err))
 				}

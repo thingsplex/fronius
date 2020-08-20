@@ -8,6 +8,6 @@
   "log_file": "/var/log/thingsplex/fronius/fronius.log",
   "log_level": "debug",
   "log_format": "text",
-  "poll_time_sec": 60,
-  "host": "fronius_ip"
+  "poll_time_sec": 5,
+  "host": "host_ip"
 }

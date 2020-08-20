@@ -23,7 +23,6 @@ type State struct {
 	EnergyDay     string         `json:"DAY_ENERGY"`
 	EnergyYear    string         `json:"YEAR_ENERGY"`
 	EnergyTotal   string         `json:"TOTAL_ENERGY"`
-	Connected     bool           `json:"connected"`
 	Systems       fronius.System `json:"systems"`
 }
 
