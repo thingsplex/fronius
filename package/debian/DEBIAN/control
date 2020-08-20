@@ -1,8 +1,8 @@
 Package: fronius
-Version: 0.0.1
+Version: 0.1.0
 Replaces: fronius
 Section: non-free/misc
 Priority: optional
 Architecture: armhf
-Maintainer: your namae <dev@your-app.com>
-Description: . futurehome app  
+Maintainer: Markus Haldorsen <markus@futurehome.no>
+Description: Fronis Inverter adapter for Futurehome system  
