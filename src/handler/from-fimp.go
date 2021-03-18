@@ -164,5 +164,13 @@ func (fc *FromFimpRouter) routeFimpMessage(newMsg *fimpgo.Message) {
 		// 		log.Error("Incorrect address")
 
 		// 	}
+	case "cmd.app.uninstall": 
+		val := map[string]interface{}{
+			"address": "1",
+		}
+		msg := fimpgo.NewMessage("evt.thing.exclusion_report", "fronius", fimpgo.VTypeObject, val, nil, nil, newMsg.Payload)
+		msg.Source = "fronius"
+		adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
+		fc.mqt.Publish(&adr, msg)
 	}
 }
