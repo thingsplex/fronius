@@ -232,6 +232,15 @@ func (fc *FromFimpRouter) routeFimpMessage(newMsg *fimpgo.Message) {
 		adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
 		fc.mqt.Publish(&adr, msg)
 
+	case "cmd.app.uninstall":
+		val := map[string]interface{}{
+			"address": "1",
+		}
+		msg := fimpgo.NewMessage("evt.thing.exclusion_report", "fronius", fimpgo.VTypeObject, val, nil, nil, newMsg.Payload)
+		msg.Source = "fronius"
+		adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
+		fc.mqt.Publish(&adr, msg)
+
 	case "cmd.thing.delete":
 		// remove device from network
 		val, err := newMsg.Payload.GetStrMapValue()
@@ -319,6 +328,26 @@ func digestParts(resp *http.Response) map[string]string {
 				}
 			}
 		}
+		// case "cmd.thing.delete":
+		// 	// remove device from network
+		// 	val, err := newMsg.Payload.GetStrMapValue()
+		// 	if err != nil {
+		// 		log.Error("Wrong msg format")
+		// 		return
+		// 	}
+		// 	deviceId, ok := val["address"]
+		// 	if ok {
+		// 		log.Info(deviceId)
+		// 		exclReport := make(map[string]string)
+		// 		exclReport["address"] = deviceId
+
+		// 		msg := fimpgo.NewMessage("evt.thing.exclusion_report", "fronius", fimpgo.VTypeObject, exclReport, nil, nil, nil)
+		// 		adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
+		// 		fc.mqt.Publish(&adr, msg)
+		// 	} else {
+		// 		log.Error("Incorrect address")
+
+		// 	}
 	}
 	return result
 }
