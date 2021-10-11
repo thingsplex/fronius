@@ -45,6 +45,8 @@ func main() {
 		panic("Not able to load state")
 	}
 	system := fronius.System{}
+	systemh := fronius.SystemHybrid{}
+	powerflow := fronius.Powerflow{}
 	// state := fronius.State{}
 
 	utils.SetupLog(configs.LogFile, configs.LogLevel, configs.LogFormat)
@@ -107,40 +109,102 @@ func main() {
 	<-ctx.Done()
 
 	PollTime := configs.PollTimeSec
+	// test := false
 	for {
 		appLifecycle.WaitForState("main", edgeapp.AppStateRunning)
 		log.Info("--------------Starting ticker---------------")
 		ticker := time.NewTicker(time.Duration(PollTime) * time.Second)
 		for ; true; <-ticker.C {
 			if configs.Host != "host_ip" {
-				req, err := http.NewRequest("GET", fronius.GetRealTimeDataURL(fmt.Sprintf("%s%s%s", "http://", configs.Host, ":80")), nil)
-				log.Debug(req)
-				if err != nil {
-					log.Error(fmt.Errorf("Can't get measurements - ", err))
-				}
-				resp, err := http.DefaultClient.Do(req)
-				if err != nil {
-					log.Error(err)
-				} else {
-					measurements, err := system.NewResponse(resp)
+
+				if configs.Type == "not_hybrid" {
+
+					req, err := http.NewRequest("GET", fronius.GetRealTimeDataURL(fmt.Sprintf("%s%s%s", "http://", configs.Host, ":80")), nil)
+					log.Debug(req)
+					if err != nil {
+						log.Error(fmt.Errorf("Can't get measurements - ", err))
+					}
+					resp, err := http.DefaultClient.Do(req)
 					if err != nil {
 						log.Error(err)
 					} else {
-						if appLifecycle.ConfigState() == edgeapp.ConfigStateNotConfigured {
-							inclReport := model.SendInclusionReport(1, states.Systems)
+						measurements, err := system.NewResponse(resp)
+						if err != nil {
+							log.Error(err)
+						} else {
+							if appLifecycle.ConfigState() == edgeapp.ConfigStateNotConfigured {
+								inclReport := model.SendInclusionReport()
 
-							msg := fimpgo.NewMessage("evt.thing.inclusion_report", "fronius", fimpgo.VTypeObject, inclReport, nil, nil, nil)
-							adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
-							mqtt.Publish(&adr, msg)
-							appLifecycle.SetConfigState(edgeapp.ConfigStateConfigured)
+								msg := fimpgo.NewMessage("evt.thing.inclusion_report", "fronius", fimpgo.VTypeObject, inclReport, nil, nil, nil)
+								adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
+								mqtt.Publish(&adr, msg)
+								appLifecycle.SetConfigState(edgeapp.ConfigStateConfigured)
+							}
+							states.Systems = measurements
+							fimpRouter.SendMeasurements(measurements)
 						}
-						states.Systems = measurements
-						fimpRouter.SendMeasurements(system.Head.RequestArguments.DeviceId, measurements)
 					}
+				} else if configs.Type == "hybrid" {
+					req, err := http.NewRequest("GET", fronius.GetRealTimeDataURL(fmt.Sprintf("%s%s%s", "http://", configs.Host, ":80")), nil)
+					log.Debug(req)
+					if err != nil {
+						log.Error(fmt.Errorf("Can't get InverterRealTimeData - ", err))
+					}
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						log.Error(err)
+					} else {
+						measurements, err := systemh.NewHybridResponse(resp)
+						if err != nil {
+							log.Error(err)
+						} else {
+							if appLifecycle.ConfigState() == edgeapp.ConfigStateNotConfigured {
+								inclReport := model.SendHybridInclusionReport()
+
+								msg := fimpgo.NewMessage("evt.thing.inclusion_report", "fronius", fimpgo.VTypeObject, inclReport, nil, nil, nil)
+								adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
+								mqtt.Publish(&adr, msg)
+								appLifecycle.SetConfigState(edgeapp.ConfigStateConfigured)
+							}
+							states.Systemsh = measurements
+						}
+					}
+
+					req, err = http.NewRequest("GET", "http://"+configs.Host+":80/status/powerflow", nil)
+					log.Debug(req)
+					if err != nil {
+						log.Error(fmt.Errorf("Can't get powerflow - ", err))
+					}
+					resp, err = http.DefaultClient.Do(req)
+					if err != nil {
+						log.Error(err)
+					} else {
+						powerflow, err := powerflow.NewPowerflowResponse(resp)
+						if err != nil {
+							log.Error(err)
+						} else {
+							states.Powerflow = powerflow
+							fimpRouter.SendHybridMeasurements(powerflow)
+
+						}
+					}
+					// do things for hybrid inverter
+					// get readable
+					// get powerflow
+					// send
 				}
 			} else {
 				log.Debug("-------NOT CONNECTED------")
 				// Do nothing
+				// if !test {
+				// 	log.Debug("THIS IS ONLY FOR TESTING")
+				// 	inclReport := model.SendHybridInclusionReport()
+
+				// 	msg := fimpgo.NewMessage("evt.thing.inclusion_report", "fronius", fimpgo.VTypeObject, inclReport, nil, nil, nil)
+				// 	adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
+				// 	mqtt.Publish(&adr, msg)
+				// 	test = true
+				// }
 			}
 			states.SaveToFile()
 		}

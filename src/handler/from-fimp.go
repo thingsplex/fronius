@@ -1,8 +1,16 @@
 package handler
 
 import (
+	"bytes"
+	"crypto/md5"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/futurehomeno/fimpgo"
 	"github.com/futurehomeno/fimpgo/edgeapp"
@@ -102,6 +110,9 @@ func (fc *FromFimpRouter) routeFimpMessage(newMsg *fimpgo.Message) {
 			return
 		}
 		fc.configs.Host = conf.Host
+		fc.configs.Type = conf.Type
+		fc.configs.Value1 = conf.Value1
+		fc.configs.Value2 = conf.Value2
 		fc.configs.SaveToFile()
 		log.Debugf("App reconfigured . New parameters : %v", fc.configs)
 		// TODO: This is an example . Add your logic here or remove
@@ -110,6 +121,83 @@ func (fc *FromFimpRouter) routeFimpMessage(newMsg *fimpgo.Message) {
 			AppState: fc.appLifecycle.GetAllStates(),
 		}
 		msg := fimpgo.NewMessage("evt.app.config_report", model.ServiceName, fimpgo.VTypeObject, configReport, nil, nil, newMsg.Payload)
+		if err := fc.mqt.RespondToRequest(newMsg.Payload, msg); err != nil {
+			fc.mqt.Publish(adr, msg)
+		}
+
+	case "cmd.system.forced_battery_storage_prestart":
+		url := "http://" + fc.configs.Host
+		digestPost(url, "/config/batteries", []byte("{\"HYB_EVU_CHARGEFROMGRID\":true}"))
+		digestPost(url, "/config/batteries", []byte("{\"HYB_EM_POWER\":-50000,\"HYB_EM_MODE\":1}"))
+		val := model.ButtonActionResponse{
+			Operation:       "cmd.system.forced_battery_storage_prestart",
+			OperationStatus: "ok",
+			Next:            "reload",
+			ErrorCode:       "",
+			ErrorText:       "",
+		}
+		msg := fimpgo.NewMessage("evt.app.config_action_report", model.ServiceName, fimpgo.VTypeObject, val, nil, nil, newMsg.Payload)
+		if err := fc.mqt.RespondToRequest(newMsg.Payload, msg); err != nil {
+			fc.mqt.Publish(adr, msg)
+		}
+
+	case "cmd.system.forced_battery_storage":
+		url := "http://" + fc.configs.Host
+		digestPost(url, "/config/batteries", []byte("{\"HYB_EM_POWER\":50000,\"HYB_EM_MODE\":1}"))
+		val := model.ButtonActionResponse{
+			Operation:       "cmd.system.forced_battery_storage",
+			OperationStatus: "ok",
+			Next:            "reload",
+			ErrorCode:       "",
+			ErrorText:       "",
+		}
+		msg := fimpgo.NewMessage("evt.app.config_action_report", model.ServiceName, fimpgo.VTypeObject, val, nil, nil, newMsg.Payload)
+		if err := fc.mqt.RespondToRequest(newMsg.Payload, msg); err != nil {
+			fc.mqt.Publish(adr, msg)
+		}
+
+	case "cmd.system.forced_battery_storage_finished":
+		url := "http://" + fc.configs.Host
+		digestPost(url, "/config/batteries", []byte("{\"HYB_EVU_CHARGEFROMGRID\":false}"))
+		digestPost(url, "/config/batteries", []byte("{\"HYB_EM_POWER\":0,\"HYB_EM_MODE\":1}"))
+		val := model.ButtonActionResponse{
+			Operation:       "cmd.system.forced_battery_storage_finished",
+			OperationStatus: "ok",
+			Next:            "reload",
+			ErrorCode:       "",
+			ErrorText:       "",
+		}
+		msg := fimpgo.NewMessage("evt.app.config_action_report", model.ServiceName, fimpgo.VTypeObject, val, nil, nil, newMsg.Payload)
+		if err := fc.mqt.RespondToRequest(newMsg.Payload, msg); err != nil {
+			fc.mqt.Publish(adr, msg)
+		}
+
+	case "cmd.system.excess_solar_production_disabled":
+		url := "http://" + fc.configs.Host
+		digestPost(url, "/config/exportlimit", []byte("{\"DPL_ON\":true,\"DPL_WPEAK\":5000,\"DPL_WLIM_USE_ABS\":true,\"DPL_WLIM_ABS\":0}"))
+		val := model.ButtonActionResponse{
+			Operation:       "cmd.system.excess_solar_production_disabled",
+			OperationStatus: "ok",
+			Next:            "reload",
+			ErrorCode:       "",
+			ErrorText:       "",
+		}
+		msg := fimpgo.NewMessage("evt.app.config_action_report", model.ServiceName, fimpgo.VTypeObject, val, nil, nil, newMsg.Payload)
+		if err := fc.mqt.RespondToRequest(newMsg.Payload, msg); err != nil {
+			fc.mqt.Publish(adr, msg)
+		}
+
+	case "cmd.system.excess_solar_production_enabled":
+		url := "http://" + fc.configs.Host
+		digestPost(url, "/config/exportlimit", []byte("{\"DPL_ON\":false}"))
+		val := model.ButtonActionResponse{
+			Operation:       "cmd.system.excess_solar_production_enabled",
+			OperationStatus: "ok",
+			Next:            "reload",
+			ErrorCode:       "",
+			ErrorText:       "",
+		}
+		msg := fimpgo.NewMessage("evt.app.config_action_report", model.ServiceName, fimpgo.VTypeObject, val, nil, nil, newMsg.Payload)
 		if err := fc.mqt.RespondToRequest(newMsg.Payload, msg); err != nil {
 			fc.mqt.Publish(adr, msg)
 		}
@@ -131,38 +219,131 @@ func (fc *FromFimpRouter) routeFimpMessage(newMsg *fimpgo.Message) {
 	case "cmd.network.get_all_nodes":
 		// TODO: This is an example . Add your logic here or remove
 	case "cmd.thing.get_inclusion_report":
-		inclReport := model.SendInclusionReport(1, fc.state.Systems)
+		inclReport := model.SendInclusionReport()
 
 		msg := fimpgo.NewMessage("evt.thing.inclusion_report", "fronius", fimpgo.VTypeObject, inclReport, nil, nil, nil)
 		adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
 		fc.mqt.Publish(&adr, msg)
 
 	case "cmd.thing.inclusion":
-		inclReport := model.SendInclusionReport(1, fc.state.Systems)
+		inclReport := model.SendInclusionReport()
 
 		msg := fimpgo.NewMessage("evt.thing.inclusion_report", "fronius", fimpgo.VTypeObject, inclReport, nil, nil, nil)
 		adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
 		fc.mqt.Publish(&adr, msg)
 
-		// case "cmd.thing.delete":
-		// 	// remove device from network
-		// 	val, err := newMsg.Payload.GetStrMapValue()
-		// 	if err != nil {
-		// 		log.Error("Wrong msg format")
-		// 		return
-		// 	}
-		// 	deviceId, ok := val["address"]
-		// 	if ok {
-		// 		log.Info(deviceId)
-		// 		exclReport := make(map[string]string)
-		// 		exclReport["address"] = deviceId
+	case "cmd.thing.delete":
+		// remove device from network
+		val, err := newMsg.Payload.GetStrMapValue()
+		if err != nil {
+			log.Error("Wrong msg format")
+			return
+		}
+		fc.configs.Host = "host_ip"
+		fc.appLifecycle.SetConfigState(edgeapp.ConfigStateNotConfigured)
+		deviceId, ok := val["address"]
+		if ok {
+			log.Info("Deleting device")
+			exclReport := make(map[string]string)
+			exclReport["address"] = deviceId
 
-		// 		msg := fimpgo.NewMessage("evt.thing.exclusion_report", "fronius", fimpgo.VTypeObject, exclReport, nil, nil, nil)
-		// 		adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
-		// 		fc.mqt.Publish(&adr, msg)
-		// 	} else {
-		// 		log.Error("Incorrect address")
+			msg := fimpgo.NewMessage("evt.thing.exclusion_report", "fronius", fimpgo.VTypeObject, exclReport, nil, nil, nil)
+			adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeAdapter, ResourceName: "fronius", ResourceAddress: "1"}
+			fc.mqt.Publish(&adr, msg)
+		} else {
+			log.Error("Incorrect address")
 
-		// 	}
+		}
 	}
+}
+
+func digestPost(host string, uri string, postBody []byte) bool {
+	url := host + uri
+	log.Debug("url: ", url)
+	method := "POST"
+	req, err := http.NewRequest(method, url, nil)
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized {
+		log.Debug("Recieved status code '%v' auth skipped", resp.StatusCode)
+		return true
+	}
+	log.Debug("digestparts")
+	digestParts := digestParts(resp)
+	log.Debug("digestparts finished")
+	digestParts["uri"] = uri
+	digestParts["method"] = method
+	digestParts["username"] = "technician"
+	digestParts["password"] = "Solcelle2021"
+
+	log.Debug("digestparts: ", digestParts)
+	req, err = http.NewRequest(method, url, bytes.NewBuffer(postBody))
+	req.Header.Set("Authorization", getDigestAuthrization(digestParts))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err = client.Do(req)
+	if err != nil {
+		log.Debug("error1: ", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Debug("error2: ", err)
+		}
+		log.Debug("response body: ", string(body))
+		return false
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Debug("error2: ", err)
+	}
+	log.Debug("response body: ", string(body))
+	return true
+}
+
+func digestParts(resp *http.Response) map[string]string {
+	result := map[string]string{}
+	if len(resp.Header["X-Www-Authenticate"]) > 0 {
+		wantedHeaders := []string{"nonce", "realm", "qop"}
+		responseHeaders := strings.Split(resp.Header["X-Www-Authenticate"][0], ",")
+		for _, r := range responseHeaders {
+			for _, w := range wantedHeaders {
+				if strings.Contains(r, w) {
+					result[w] = strings.Split(r, `"`)[1]
+				}
+			}
+		}
+	}
+	return result
+}
+
+func getMD5(text string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(text))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func getCnonce() string {
+	b := make([]byte, 8)
+	io.ReadFull(rand.Reader, b)
+	return fmt.Sprintf("%x", b)[:16]
+}
+
+func getDigestAuthrization(digestParts map[string]string) string {
+	d := digestParts
+	ha1 := getMD5(d["username"] + ":" + d["realm"] + ":" + d["password"])
+	ha2 := getMD5(d["method"] + ":" + d["uri"])
+	nonceCount := 00000001
+	cnonce := getCnonce()
+	response := getMD5(fmt.Sprintf("%s:%s:%v:%s:%s:%s", ha1, d["nonce"], nonceCount, cnonce, d["qop"], ha2))
+	authorization := fmt.Sprintf(`Digest username="%s", realm="%s", nonce="%s", uri="%s", cnonce="%s", nc="%v", qop="%s", response="%s"`,
+		d["username"], d["realm"], d["nonce"], d["uri"], cnonce, nonceCount, d["qop"], response)
+	log.Debug("authorization: ", authorization)
+	return authorization
 }

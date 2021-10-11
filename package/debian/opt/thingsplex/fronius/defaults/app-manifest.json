@@ -13,9 +13,102 @@
       "is_required": true,
       "hidden":false,
       "config_point": "init"
+    },
+    {
+      "id": "type",
+      "label": {"en": "Inverter Type"},
+      "val_t": "string",
+      "ui": {
+        "type": "select_horizontal",
+        "select": [{"val": "hybrid","label": {"en": "Hybrid"}},{"val": "not_hybrid","label":{"en": "Not hybrid"}}]
+      },
+      "val": {
+        "default": "nothing"
+      },
+      "is_required": true,
+      "hidden": false,
+      "config_point": "any"
+    },
+    {
+      "id": "value1",
+      "label": {"en": "Value 1"},
+      "val_t": "string",
+      "ui": {
+        "type": "input_string"
+      },
+      "val": {
+        "default": ""
+      },
+      "is_required": true,
+      "hidden": false,
+      "config_point": "any"
+    },
+    {
+      "id": "value2",
+      "label": {"en": "Value 2"},
+      "val_t": "string",
+      "ui": {
+        "type": "input_string"
+      },
+      "val": {
+        "default": ""
+      },
+      "is_required": true,
+      "hidden": false,
+      "config_point": "any"
     }
   ],
   "ui_buttons": [
+    {
+      "id": "forcedBatteryStoragePrestart",
+      "label": {"en": "Forced Battery Storage Prestart"},
+      "req": {
+        "serv": "fronius",
+        "intf_t": "cmd.system.forced_battery_storage_prestart",
+        "val": ""
+      },
+      "hidden": false
+    },
+    {
+      "id": "forcedBatteryStorage",
+      "label": {"en": "Forced Battery Storage"},
+      "req": {
+        "serv": "fronius",
+        "intf_t": "cmd.system.forced_battery_storage",
+        "val": ""
+      },
+      "hidden": false
+    },
+    {
+      "id": "forcedBatteryStorageFinished",
+      "label": {"en": "Forced Battery Storage Finished"},
+      "req": {
+        "serv": "fronius",
+        "intf_t": "cmd.system.forced_battery_storage_finished",
+        "val": ""
+      },
+      "hidden": false
+    },
+    {
+      "id": "excessSolarProductionDisabled",
+      "label": {"en": "Excess Solar Production Disabled"},
+      "req": {
+        "serv": "fronius",
+        "intf_t": "cmd.system.excess_solar_production_disabled",
+        "val": ""
+      },
+      "hidden": false
+    },
+    {
+      "id": "excessSolarProductionEnabled",
+      "label": {"en": "Excess Solar Production Enabled"},
+      "req": {
+        "serv": "fronius",
+        "intf_t": "cmd.system.excess_solar_production_enabled",
+        "val": ""
+      },
+      "hidden": false
+    }
   ],
   "ui_blocks": [{
       "id": "host",
@@ -23,6 +116,60 @@
       "text": {"en": "Set your Fronius Inverter's IP. \n PS: FORMAT NEEDS TO BE XX.XX.XX.XX. \n Example: 10.0.0.83"},
       "configs": ["host"],
       "buttons": [],
+      "footer": {"en": ""},
+      "hidden":false
+    },
+    {
+      "id": "type",
+      "header": {"en": "Configure hybrid inverter"},
+      "text": {"en": ""},
+      "configs": ["type", "value1", "value2"],
+      "buttons": [],
+      "footer": {"en": ""},
+      "hidden":false
+    },
+    {
+      "id": "forcedBatteryStoragePrestart",
+      "header": {"en": "Forced Battery Storage Prestart"},
+      "text": {"en": ""},
+      "configs": [],
+      "buttons": ["forcedBatteryStoragePrestart"],
+      "footer": {"en": ""},
+      "hidden":false
+    },
+    {
+      "id": "forcedBatteryStorage",
+      "header": {"en": "Forced Battery Storage"},
+      "text": {"en": ""},
+      "configs": [],
+      "buttons": ["forcedBatteryStorage"],
+      "footer": {"en": ""},
+      "hidden":false
+    },
+    {
+      "id": "forcedBatteryStorageFinished",
+      "header": {"en": "Forced Battery Storage Finished"},
+      "text": {"en": ""},
+      "configs": [],
+      "buttons": ["forcedBatteryStorageFinished"],
+      "footer": {"en": ""},
+      "hidden":false
+    },
+    {
+      "id": "excessSolarProductionDisabled",
+      "header": {"en": "Excess Solar Production Disabled"},
+      "text": {"en": ""},
+      "configs": [],
+      "buttons": ["excessSolarProductionDisabled"],
+      "footer": {"en": ""},
+      "hidden":false
+    },
+    {
+      "id": "excessSolarProductionEnabled",
+      "header": {"en": "Excess Solar Production Enabled"},
+      "text": {"en": ""},
+      "configs": [],
+      "buttons": ["excessSolarProductionEnabled"],
       "footer": {"en": ""},
       "hidden":false
     }

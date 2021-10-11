@@ -15,6 +15,10 @@ const (
 	api          = "solar_api/v1"
 	getInvRtData = "GetInverterRealtimeData.cgi"
 	scope        = "Scope=System"
+	batteries    = "config/batteries"
+	exportLimit  = "config/exportlimit"
+	readable     = "components/cache/readable"
+	powerflow    = "status/powerflow"
 )
 
 type System struct {
@@ -100,6 +104,62 @@ type System struct {
 	} `json:"Body"`
 }
 
+type SystemHybrid struct {
+	Body struct {
+		Data struct {
+			Pac struct {
+				Unit  string `json:"Unit"`
+				Value struct {
+					Num1 float64 `json:"1"`
+				} `json:"Value"`
+			} `json:"PAC"`
+		} `json:"Data"`
+	} `json:"Body"`
+	Head struct {
+		RequestArguments struct {
+			DeviceClass string `json:"DeviceClass"`
+			Scope       string `json:"Scope"`
+		} `json:"RequestArguments"`
+		Status struct {
+			Code        int    `json:"Code"`
+			Reason      string `json:"Reason"`
+			UserMessage string `json:"UserMessage"`
+		} `json:"Status"`
+		Timestamp string `json:"Timestamp"`
+	} `json:"Head"`
+}
+
+type Powerflow struct {
+	Common struct {
+		Datestamp string `json:"datestamp"`
+		Timestamp string `json:"timestamp"`
+	} `json:"common"`
+	Inverters []struct {
+		BatMode float64 `json:"BatMode"`
+		Cid     int     `json:"CID"`
+		Dt      int     `json:"DT"`
+		ID      int     `json:"ID"`
+		P       float64 `json:"P"`
+		Soc     float64 `json:"SOC"`
+	} `json:"inverters"`
+	Site struct {
+		BackupMode         bool        `json:"BackupMode"`
+		BatteryStandby     bool        `json:"BatteryStandby"`
+		EDay               interface{} `json:"E_Day"`
+		ETotal             interface{} `json:"E_Total"`
+		EYear              interface{} `json:"E_Year"`
+		MLoc               int         `json:"MLoc"`
+		Mode               string      `json:"Mode"`
+		PAkku              float64     `json:"P_Akku"`
+		PGrid              float64     `json:"P_Grid"`
+		PLoad              float64     `json:"P_Load"`
+		PPv                float64     `json:"P_PV"`
+		RelAutonomy        float64     `json:"rel_Autonomy"`
+		RelSelfConsumption float64     `json:"rel_SelfConsumption"`
+	} `json:"site"`
+	Version string `json:"version"`
+}
+
 type State struct {
 	Value float64
 	Unit  string
@@ -110,6 +170,8 @@ func GetRealTimeDataURL(host string) string {
 	return url
 }
 
+// func
+
 func (sys System) NewResponse(httpresp *http.Response) (system System, err error) {
 	body, err := ioutil.ReadAll(httpresp.Body)
 	if err != nil {
@@ -119,6 +181,36 @@ func (sys System) NewResponse(httpresp *http.Response) (system System, err error
 
 	err = json.Unmarshal(body, &system)
 	return system, err
+}
+
+func (sysh SystemHybrid) NewHybridResponse(httpresp *http.Response) (systemh SystemHybrid, err error) {
+	body, err := ioutil.ReadAll(httpresp.Body)
+	if err != nil {
+		// handle err
+		return systemh, err
+	}
+
+	err = json.Unmarshal(body, &systemh)
+	return systemh, err
+}
+
+func (pow Powerflow) NewPowerflowResponse(httpresp *http.Response) (powerf Powerflow, err error) {
+	body, err := ioutil.ReadAll(httpresp.Body)
+	if err != nil {
+		// handle err
+		return powerf, err
+	}
+
+	err = json.Unmarshal(body, &powerf)
+	return powerf, err
+}
+
+func (st State) CurrentPowerHybrid(powf Powerflow) State {
+	for _, inv := range powf.Inverters {
+		st.Value += inv.P
+	}
+	st.Unit = "W"
+	return st
 }
 
 func (st State) CurrentPower(sys System) State {

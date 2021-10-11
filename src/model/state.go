@@ -16,14 +16,16 @@ import (
 
 type State struct {
 	path          string
-	WorkDir       string         `json:"-"`
-	ConfiguredAt  string         `json:"configured_at"`
-	ConfiguredBy  string         `json:"configured_by"`
-	EnergyCurrent string         `json:"PAC"`
-	EnergyDay     string         `json:"DAY_ENERGY"`
-	EnergyYear    string         `json:"YEAR_ENERGY"`
-	EnergyTotal   string         `json:"TOTAL_ENERGY"`
-	Systems       fronius.System `json:"systems"`
+	WorkDir       string               `json:"-"`
+	ConfiguredAt  string               `json:"configured_at"`
+	ConfiguredBy  string               `json:"configured_by"`
+	EnergyCurrent string               `json:"PAC"`
+	EnergyDay     string               `json:"DAY_ENERGY"`
+	EnergyYear    string               `json:"YEAR_ENERGY"`
+	EnergyTotal   string               `json:"TOTAL_ENERGY"`
+	Systems       fronius.System       `json:"systems"`
+	Systemsh      fronius.SystemHybrid `json:"systemsh"`
+	Powerflow     fronius.Powerflow    `json:"powerflow"`
 }
 
 func NewStates(workDir string) *State {

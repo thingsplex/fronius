@@ -33,6 +33,11 @@ type Configs struct {
 	PollTimeSec        int    `json:"poll_time_sec"`
 	StateDir           string `json:"state_dir"`
 	Host               string `json:"host"`
+	Type               string `json:"type"`
+	Value1             string `json:"value1"`
+	Value2             string `json:"value2"`
+	Username           string `json:"username"`
+	Password           string `json:"password"`
 }
 
 func NewConfigs(workDir string) *Configs {
